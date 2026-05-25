@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#0a1628"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>E-Zone 360 | National Electioneering Zone Creator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@600;700;800;900&family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+  :root {
+    --navy: #0a1628;
+    --navy2: #0d1f3c;
+    --red: #dc2626;
+    --red2: #b91c1c;
+    --blue: #1d4ed8;
+    --blue2: #1e40af;
+    --gold: #f59e0b;
+    --green: #16a34a;
+    --amber: #d97706;
+    --white: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--navy);
+    touch-action: none;
+    -ms-touch-action: none;
+  }
+
+  /* Only allow pinch zoom inside the actual map div */
+  #map { touch-action: pinch-zoom pan-x pan-y; }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column;
+    z-index: 1;
+  }
+  .screen.active { display: flex; }
+  #instructions.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    z-index: 9000 !important;
+  }
+
+  /* ── SPLASH ── */
+  #splash {
+    background: var(--navy);
+    align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .stars-bg {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    font-size: 16px;
+    animation: twinkle 2s infinite alternate;
+  }
+  @keyframes twinkle {
+    from { opacity: 0.3; transform: scale(0.8); }
+    to   { opacity: 1;   transform: scale(1.2); }
+  }
+  .splash-logo {
+    position: relative; z-index: 2;
+    text-align: center;
+    animation: fadeInUp 1s ease both;
+  }
+  @keyframes fadeInUp {
+    from { opacity:0; transform: translateY(30px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .logo-box {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 32px 40px 24px;
+    backdrop-filter: blur(10px);
+  }
+  .logo-icon {
+    font-size: 72px; line-height: 1;
+    margin-bottom: 8px;
+  }
+  .logo-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 58px; letter-spacing: 4px;
+    color: var(--white);
+    line-height: 1;
+  }
+  .logo-title span.z { color: var(--red); }
+  .logo-subtitle {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px; letter-spacing: 6px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 10px;
+  }
+  .splash-btn {
+    margin-top: 48px;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--red);
+    border: none; color: white;
+    font-size: 24px; font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 0 0 8px rgba(220,38,38,0.2), 0 8px 24px rgba(220,38,38,0.5);
+    animation: pulse-red 1.5s infinite;
+  }
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 0 8px rgba(220,38,38,0.2), 0 8px 24px rgba(220,38,38,0.5); }
+    50%      { box-shadow: 0 0 0 16px rgba(220,38,38,0.05), 0 8px 24px rgba(220,38,38,0.5); }
+  }
+
+  /* ── INSTRUCTIONS POPUP ── */
+  #instructions {
+    background: rgba(10,22,40,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    overflow-y: auto;
+    padding: 56px 16px 20px;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .instr-card {
+    background: white;
+    border-radius: 24px;
+    padding: 22px 18px 18px;
+    max-width: 420px;
+    width: 92%;
+    margin: 4px auto;
+    position: relative;
+    overflow: hidden;
+  }
+  .instr-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 21px; font-weight: 900;
+    text-align: center; margin-bottom: 4px;
+    color: #0a1628; line-height: 1.2;
+    position: relative; z-index: 1;
+  }
+  .instr-subtitle {
+    text-align: center; font-size: 14px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700; margin-bottom: 12px; color: #333;
+    position: relative; z-index: 1;
+  }
+  .instr-subtitle .x-mark { color: var(--red); font-weight: 900; }
+  .instr-step {
+    display: flex; gap: 10px;
+    margin-bottom: 13px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px; font-weight: 800;
+    line-height: 1.5; color: #1a1a2e;
+    position: relative; z-index: 1;
+  }
+  .instr-step .num { font-weight: 900; min-width: 22px; color: var(--red); font-size: 15px; }
+  .instr-step strong { font-weight: 900; color: #0a1628; }
+  .instr-close {
+    display: block; margin: 14px auto 0;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--red); border: none;
+    color: white; font-size: 22px; font-weight: 900;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(220,38,38,0.5);
+    font-family: 'Nunito', sans-serif;
+    position: relative; z-index: 999; pointer-events: auto;
+  }
+
+  /* ── MAP SCREENS ── */
+  .map-screen {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column;
+  }
+  .map-screen.active { display: flex; }
+
+  #map {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+  .leaflet-container { background: #1a2a1a !important; }
+
+  /* Screen label - hidden in production */
+  .screen-tag { display: none; }
+
+  /* Instruction bubble */
+  .map-bubble {
+    position: absolute; top: 12px; left: 12px; right: 12px;
+    z-index: 500;
+    background: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    font-family: 'Nunito', sans-serif;
+    font-size: 20px; font-weight: 800;
+    text-align: center; line-height: 1.35;
+    color: #111;
+  }
+  .map-bubble .red { color: var(--red); }
+
+  /* ? help button */
+  .help-btn {
+    position: absolute; top: 70px; left: 14px;
+    z-index: 500;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(80,80,80,0.85);
+    border: none; color: white;
+    font-size: 18px; font-weight: 900;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Bottom bar */
+  .bottom-bar {
+    background: rgba(10,22,40,0.92);
+    padding: 12px 16px 28px;
+    display: flex; flex-direction: column; gap: 10px;
+    z-index: 400;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .btn-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .btn-row.single { grid-template-columns: 1fr; }
+  .btn-row.center { display: flex; justify-content: center; }
+
+  .app-btn {
+    border: none; border-radius: 14px;
+    padding: 16px 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 18px; font-weight: 900;
+    letter-spacing: 0.5px;
+    cursor: pointer; color: white;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: transform 0.1s, opacity 0.1s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .app-btn:active { transform: scale(0.96); opacity: 0.85; }
+  .btn-green  { background: var(--green);  box-shadow: 0 4px 14px rgba(22,163,74,0.45); }
+  .btn-blue   { background: var(--blue);   box-shadow: 0 4px 14px rgba(29,78,216,0.45); }
+  .btn-red    { background: var(--red);    box-shadow: 0 4px 14px rgba(220,38,38,0.45); }
+  .btn-amber  { background: var(--amber);  box-shadow: 0 4px 14px rgba(217,119,6,0.45); }
+  .btn-reset  {
+    background: var(--red); font-size: 15px; padding: 12px 28px;
+    box-shadow: 0 4px 12px rgba(220,38,38,0.4);
+  }
+
+  /* Distance readout - small unobtrusive along drag line */
+  #dist-readout {
+    position: absolute;
+    z-index: 501;
+    background: none;
+    color: #dc2626;
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px; font-weight: 700;
+    pointer-events: none;
+    display: none;
+    text-shadow: 0 0 4px white, 0 0 4px white;
+    white-space: nowrap;
+    transform: translate(-50%, -130%);
+  }
+  #dist-readout.show { display: block; }
+  #dist-readout.done { color: #16a34a; font-size: 14px; }
+
+  /* SVG zone canvas overlay */
+  #zone-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 300;
+  }
+
+  /* Incident photo overlay */
+  #photo-overlay {
+    position: absolute; inset: 0; z-index: 600;
+    background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0;
+  }
+  #photo-overlay.show { display: flex; }
+  #photo-preview {
+    width: 84%; max-height: 55vh;
+    border-radius: 14px; border: 3px solid white;
+    object-fit: cover;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    margin-top: 80px;
+  }
+
+  /* Camera input */
+  #camera-input { display: none; }
+
+  /* Notification toast */
+  #toast {
+    position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
+    z-index: 9000;
+    background: rgba(22,163,74,0.95);
+    color: white; font-family: 'Oswald', sans-serif;
+    font-size: 16px; padding: 10px 24px;
+    border-radius: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     STATE SELECTOR SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="state-selector" class="screen" style="background:#0a1628;flex-direction:column;overflow:hidden;">
+  <div style="background:#0d2144;padding:52px 20px 16px;text-align:center;flex-shrink:0;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:white;letter-spacing:3px;">E-ZONE <span style="color:#dc2626;">360</span></div>
+    <div style="font-family:'Nunito',sans-serif;font-size:14px;color:rgba(255,255,255,0.6);letter-spacing:3px;margin-top:4px;">SELECT YOUR STATE</div>
+  </div>
+  <div id="state-list" style="flex:1;overflow-y:auto;padding:12px 16px 24px;">
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SPLASH SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="splash" class="screen active" style="
+  background:linear-gradient(to bottom, #090f2b 0%, #0d1b4f 50%, #090f2b 100%);
+  align-items:center;justify-content:center;overflow:hidden;
+">
+  <!-- Scattered stars background -->
+  <div style="position:absolute;inset:0;pointer-events:none;" id="splash-stars-div"></div>
+
+  <!-- Centered content -->
+  <div style="
+    position:relative;z-index:2;
+    text-align:center;width:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:20px;
+  ">
+    <svg viewBox="0 0 380 90" style="width:85%;max-width:320px;height:auto;margin-bottom:25px;" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(0,5)">
+        <path d="M70,40 A34,34 0 1,0 70,50" fill="none" stroke="#dc2626" stroke-width="16" stroke-linecap="round"/>
+        <polygon points="18,44 38,30 38,58" fill="#dc2626"/>
+        <path d="M48,10 L90,10 Q96,10 96,16 L96,22 Q96,28 90,28 L48,28 Q42,28 42,22 L42,16 Q42,10 48,10 Z" fill="#1d4ed8"/>
+        <text x="69" y="24" text-anchor="middle" font-size="10" fill="white" font-family="Arial" font-weight="bold">★★★</text>
+      </g>
+      <text x="108" y="72" font-family="Arial Black,sans-serif" font-size="62" font-weight="900" fill="white">E</text>
+      <text x="152" y="72" font-family="Arial Black,sans-serif" font-size="62" font-weight="900" fill="white">-</text>
+      <text x="168" y="72" font-family="Arial Black,sans-serif" font-size="62" font-weight="900" fill="#dc2626">Z</text>
+      <circle cx="232" cy="44" r="28" fill="white"/>
+      <circle cx="232" cy="44" r="20" fill="#dc2626"/>
+      <circle cx="232" cy="44" r="10" fill="#1d4ed8"/>
+      <circle cx="232" cy="44" r="4"  fill="white"/>
+      <text x="262" y="72" font-family="Arial Black,sans-serif" font-size="62" font-weight="900" fill="white">N</text>
+      <text x="312" y="72" font-family="Arial Black,sans-serif" font-size="62" font-weight="900" fill="white">E</text>
+    </svg>
+    <div style="
+      color:#4a6fa5;font-size:14px;letter-spacing:5px;
+      font-weight:bold;text-transform:uppercase;
+      margin-bottom:15px;line-height:1.4;
+      font-family:'Oswald',sans-serif;
+    ">E-Zone 360<br>All 50 States</div>
+    <div style="width:80px;height:2px;background:#1a3a70;"></div>
+  </div>
+
+  <!-- Red X button -->
+  <button onclick="openInstructions('splash')" style="
+    position:absolute;bottom:40px;z-index:9999;
+    width:55px;height:55px;border-radius:50%;
+    background:#d60a17;border:none;
+    color:white;font-size:22px;font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 4px 15px rgba(214,10,23,0.4);
+    display:flex;align-items:center;justify-content:center;
+  ">✕</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     INSTRUCTIONS / HELP POPUP
+═══════════════════════════════════════════════════ -->
+<div id="instructions" class="screen">
+  <div class="instr-card">
+    <!-- RWB border stars only - top and bottom rows -->
+    <div style="position:absolute;inset:0;border-radius:24px;overflow:hidden;pointer-events:none;z-index:0;">
+      <!-- Top row: red white blue pattern -->
+      <div style="position:absolute;top:5px;left:0;right:0;display:flex;justify-content:space-around;padding:0 8px;">
+        <span style="color:#dc2626;font-size:13px;">★</span>
+        <span style="color:white;font-size:11px;-webkit-text-stroke:1px #dc2626;">★</span>
+        <span style="color:#1d4ed8;font-size:14px;">★</span>
+        <span style="color:#dc2626;font-size:11px;">★</span>
+        <span style="color:white;font-size:13px;-webkit-text-stroke:1px #1d4ed8;">★</span>
+        <span style="color:#1d4ed8;font-size:12px;">★</span>
+        <span style="color:#dc2626;font-size:14px;">★</span>
+        <span style="color:white;font-size:11px;-webkit-text-stroke:1px #dc2626;">★</span>
+        <span style="color:#1d4ed8;font-size:13px;">★</span>
+      </div>
+      <!-- Bottom row -->
+      <div style="position:absolute;bottom:5px;left:0;right:0;display:flex;justify-content:space-around;padding:0 8px;">
+        <span style="color:#1d4ed8;font-size:12px;">★</span>
+        <span style="color:#dc2626;font-size:14px;">★</span>
+        <span style="color:white;font-size:11px;-webkit-text-stroke:1px #1d4ed8;">★</span>
+        <span style="color:#dc2626;font-size:13px;">★</span>
+        <span style="color:#1d4ed8;font-size:14px;">★</span>
+        <span style="color:white;font-size:12px;-webkit-text-stroke:1px #dc2626;">★</span>
+        <span style="color:#dc2626;font-size:11px;">★</span>
+        <span style="color:#1d4ed8;font-size:13px;">★</span>
+        <span style="color:#dc2626;font-size:14px;">★</span>
+      </div>
+    </div>
+    <!-- Content -->
+    <div style="position:relative;z-index:1;padding-top:4px;">
+      <div class="instr-title">Welcome to the Electioneering Zone Poll Workers!</div>
+      <div class="instr-subtitle">Instructions <span class="x-mark">(Tap X to close)</span></div>
+      <div class="instr-step"><span class="num">1.</span><span>Head to your location entrance and tap <strong>GO</strong>. Tap <strong>LOCK</strong> to confirm your position</span></div>
+      <div class="instr-step"><span class="num">2.</span><span>Place your finger on the <span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 2px"><span style="width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:2px solid white;box-shadow:0 0 0 2px #dc2626;display:inline-block"></span></span> and drag directionally to set the Red Zone (beeps at 200 ft) then release</span></div>
+      <div class="instr-step"><span class="num">3.</span><span>Tap <strong>Screenshot</strong> to save the Zone to your phone</span></div>
+      <div class="instr-step"><span class="num">4.</span><span>Once LOCKED, walk the Zone — phone vibrates near boundary</span></div>
+      <div class="instr-step"><span class="num">5.</span><span>Tap <strong>DROP !</strong> to mark an infraction. Walk to offense first</span></div>
+      <div class="instr-step"><span class="num">6.</span><span>Take a picture of the infraction. Save to phone. Repeat as needed</span></div>
+      <div class="instr-step"><span class="num">7.</span><span>Use <strong>BACK</strong> to redo any step or <strong>RESET</strong> to start over</span></div>
+      <button class="instr-close" onclick="closeInstructions()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAP WRAPPER (single Leaflet map, shared across screens)
+═══════════════════════════════════════════════════ -->
+<div id="map-wrapper" class="map-screen" style="z-index:10;">
+  <div id="map"></div>
+  <svg id="zone-svg" viewBox="" preserveAspectRatio="none"></svg>
+  <div id="dist-readout">0 ft</div>
+  <div id="photo-overlay">
+    <img id="photo-preview" src="" alt="incident photo"/>
+  </div>
+  <input type="file" id="camera-input" accept="image/*" capture="environment"/>
+</div>
+
+<!-- Shared map UI (bubble + help + bottom bar) swapped per screen -->
+<div id="map-ui" style="position:fixed;inset:0;pointer-events:none;z-index:100;display:none;">
+  <!-- Static bubble box with ? centered at bottom - safe area aware -->
+  <div onclick="event.stopPropagation();" style="
+    position:absolute;
+    top:56px;
+    left:12px;right:12px;
+    pointer-events:auto;z-index:500;
+    background:white;border-radius:16px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.35);
+    min-height:90px;
+    display:flex;flex-direction:column;align-items:center;
+  ">
+    <div id="bubble" style="
+      font-family:'Nunito',sans-serif;
+      font-size:19px;font-weight:800;
+      text-align:center;line-height:1.35;
+      color:#111;padding:14px 16px 8px;width:100%;
+    "></div>
+    <div style="
+      width:100%;border-top:1px solid rgba(0,0,0,0.07);
+      display:flex;justify-content:center;padding:5px 0 7px;
+    ">
+      <button onclick="event.stopPropagation();showHelp();" style="
+        width:28px;height:28px;border-radius:50%;
+        background:rgba(80,80,80,0.8);border:none;
+        color:white;font-size:14px;font-weight:900;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        pointer-events:auto;
+      ">?</button>
+    </div>
+  </div>
+  <div id="screen-tag" class="screen-tag"></div>
+
+  <!-- Zoom + Recenter buttons - right side -->
+  <div style="position:absolute;right:12px;bottom:160px;z-index:500;pointer-events:auto;display:flex;flex-direction:column;gap:4px;">
+    <button onclick="if(map)map.zoomIn()" style="width:38px;height:38px;background:white;border:none;border-radius:8px 8px 0 0;font-size:24px;font-weight:700;color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
+    <button onclick="if(map)map.zoomOut()" style="width:38px;height:38px;background:white;border:none;border-radius:0 0 8px 8px;font-size:24px;font-weight:700;color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;line-height:1;border-top:1px solid #eee;">−</button>
+    <button onclick="recenterMap()" style="width:38px;height:38px;background:white;border:none;border-radius:8px;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;margin-top:4px;">📍</button>
+  </div>
+  <div id="bottom-bar" class="bottom-bar" style="
+    position:absolute; bottom:0; left:0; right:0;
+    pointer-events:auto;
+  "></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const STATES = [
+  {name:'Alabama',abbr:'AL',feet:30,angle:360,anchor:'exterior entry door of building'},
+  {name:'Alaska',abbr:'AK',feet:200,angle:360,anchor:'any entrance to the polling place'},
+  {name:'Arizona',abbr:'AZ',feet:75,angle:360,anchor:'main outside entrance of building'},
+  {name:'Arkansas',abbr:'AR',feet:100,angle:360,anchor:'primary exterior entrance door'},
+  {name:'California',abbr:'CA',feet:100,angle:360,anchor:'room where voting occurs'},
+  {name:'Colorado',abbr:'CO',feet:100,angle:360,anchor:'building containing the polling place'},
+  {name:'Connecticut',abbr:'CT',feet:75,angle:360,anchor:'outside entrance of the polling place'},
+  {name:'Delaware',abbr:'DE',feet:50,angle:360,anchor:'entrance to the building containing the voting room'},
+  {name:'District of Columbia',abbr:'DC',feet:50,angle:360,anchor:'entrance and exit doors of the polling place'},
+  {name:'Florida',abbr:'FL',feet:150,angle:360,anchor:'entrance to any polling place'},
+  {name:'Georgia',abbr:'GA',feet:150,angle:360,anchor:'outer edge of the building structure'},
+  {name:'Hawaii',abbr:'HI',feet:200,angle:360,anchor:'perimeter of the property line'},
+  {name:'Idaho',abbr:'ID',feet:100,angle:360,anchor:'building structure where voting occurs'},
+  {name:'Illinois',abbr:'IL',feet:100,angle:360,anchor:'polling place entrance'},
+  {name:'Indiana',abbr:'IN',feet:50,angle:360,anchor:'entrance of the polls (the chute)'},
+  {name:'Iowa',abbr:'IA',feet:300,angle:360,anchor:'outside door of the building'},
+  {name:'Kansas',abbr:'KS',feet:250,angle:360,anchor:'entrance to the polling place'},
+  {name:'Kentucky',abbr:'KY',feet:100,angle:360,anchor:'building entrance door'},
+  {name:'Louisiana',abbr:'LA',feet:600,angle:360,anchor:'polling place entrance door'},
+  {name:'Maine',abbr:'ME',feet:250,angle:360,anchor:'entrance of the building on public property'},
+  {name:'Maryland',abbr:'MD',feet:100,angle:360,anchor:'entrance and exit of the polling place'},
+  {name:'Massachusetts',abbr:'MA',feet:150,angle:360,anchor:'building entrance door'},
+  {name:'Michigan',abbr:'MI',feet:100,angle:360,anchor:'entrance to the building'},
+  {name:'Minnesota',abbr:'MN',feet:100,angle:360,anchor:'building or public property boundary'},
+  {name:'Mississippi',abbr:'MS',feet:150,angle:360,anchor:'building wherein the election is held'},
+  {name:'Missouri',abbr:'MO',feet:25,angle:360,anchor:'outer door closest to the voting booth'},
+  {name:'Montana',abbr:'MT',feet:100,angle:360,anchor:'building containing the voting mechanism'},
+  {name:'Nebraska',abbr:'NE',feet:200,angle:360,anchor:'building containing the polling place'},
+  {name:'Nevada',abbr:'NV',feet:100,angle:360,anchor:'building entrance or voting room'},
+  {name:'New Hampshire',abbr:'NH',feet:100,angle:360,anchor:'building containing the polling place'},
+  {name:'New Jersey',abbr:'NJ',feet:200,angle:270,anchor:'outside entrance of the polling place'},
+  {name:'New Mexico',abbr:'NM',feet:100,angle:360,anchor:'building containing the voting space'},
+  {name:'New York',abbr:'NY',feet:100,angle:360,anchor:'designated entrances of the building'},
+  {name:'North Carolina',abbr:'NC',feet:50,angle:360,anchor:'front entrance door of the voting place'},
+  {name:'North Dakota',abbr:'ND',feet:100,angle:360,anchor:'entrance to the voting room'},
+  {name:'Ohio',abbr:'OH',feet:100,angle:360,anchor:'entrance door to the building'},
+  {name:'Oklahoma',abbr:'OK',feet:300,angle:360,anchor:'ballot box or early voting enclosure'},
+  {name:'Oregon',abbr:'OR',feet:100,angle:360,anchor:'building housing the voting site or drop box'},
+  {name:'Pennsylvania',abbr:'PA',feet:100,angle:360,anchor:'polling room itself'},
+  {name:'Puerto Rico',abbr:'PR',feet:328,angle:360,anchor:'any point of the building or lot'},
+  {name:'Rhode Island',abbr:'RI',feet:100,angle:360,anchor:'building structure entrance'},
+  {name:'South Carolina',abbr:'SC',feet:500,angle:360,anchor:'entrance door of the polling place'},
+  {name:'South Dakota',abbr:'SD',feet:100,angle:360,anchor:'entrance door to the polling place'},
+  {name:'Tennessee',abbr:'TN',feet:100,angle:360,anchor:'boundary structure or building entrance'},
+  {name:'Texas',abbr:'TX',feet:100,angle:360,anchor:'outside door through which a voter may enter'},
+  {name:'Utah',abbr:'UT',feet:150,angle:360,anchor:'building structure containing the polls'},
+  {name:'Vermont',abbr:'VT',feet:null,angle:360,anchor:'walkways and driveways leading to building entrance'},
+  {name:'Virginia',abbr:'VA',feet:40,angle:360,anchor:'entrance of the room or building where voting occurs'},
+  {name:'Washington',abbr:'WA',feet:100,angle:360,anchor:'entrance of a voting center or ballot drop box'},
+  {name:'West Virginia',abbr:'WV',feet:100,angle:360,anchor:'outside entrance of the polling place'},
+  {name:'Wisconsin',abbr:'WI',feet:100,angle:360,anchor:'entrance to the building containing the polls'},
+  {name:'Wyoming',abbr:'WY',feet:100,angle:360,anchor:'building containing the polling place'},
+];
+
+let selectedState = null;
+
+const STATE = {
+  prevMapScreen: null,
+  gpsPos: null,
+  lockedPos: null,
+  arcData: null,
+  arcLocked: false,
+  incidents: [],
+  currentPhoto: null,
+  mapReady: false,
+  watchId: null,
+  gpsMarker: null,
+  incidentMarkers: [],
+  dragging: false,
+  dragStartPx: null,
+  FEET_200: 60.96,
+  markerMode: 'normal',
+  userPanned: false,
+  // Batch numbering
+  batchNumber: 0,        // increments each new zone session
+  photoIndexInBatch: 0,  // 1=zone screenshot, 2=pin screenshot, 3=offense photo
+};
+
+// ═══════════════════════════════════════════════════════════
+// SCATTERED STARS for splash
+// ═══════════════════════════════════════════════════════════
+try {
+  const container = document.getElementById('splash-stars-div');
+  if (container) {
+    const colors = ['#dc2626','#1d4ed8','#dc2626','#1d4ed8','#ffffff'];
+    for (let i = 0; i < 55; i++) {
+      const star = document.createElement('div');
+      const size = 8 + Math.random() * 22;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const filled = Math.random() > 0.4;
+      star.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${size}px;color:${filled ? color : 'transparent'};-webkit-text-stroke:${filled ? '0' : `1.5px ${color}`};opacity:${0.35 + Math.random()*0.65};transform:rotate(${Math.random()*30-15}deg);animation:twinkle ${1.5+Math.random()*2}s ${Math.random()*2}s infinite alternate;pointer-events:none;`;
+      star.textContent = '★';
+      container.appendChild(star);
+    }
+  }
+} catch(e) { console.log('Stars skipped:', e); }// ═══════════════════════════════════════════════════════════
+// LEAFLET MAP
+// ═══════════════════════════════════════════════════════════
+let map;
+function initMap() {
+  if (STATE.mapReady) return;
+  document.getElementById('map-wrapper').style.display = 'flex';
+  initIcons();
+
+  map = L.map('map', {
+    zoomControl: false,
+    attributionControl: false,
+    tap: false,           // important: let us handle touch
+  }).setView([39.5, -98.35], 4); // Start zoomed out US - GPS will re-center
+
+  // Satellite tiles (Esri, free)
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20,
+    attribution: 'Esri'
+  }).addTo(map);
+
+  // Labels on top
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20, opacity: 0.7
+  }).addTo(map);
+
+  // Pinch zoom always on
+  map.touchZoom.enable();
+  map.scrollWheelZoom.enable();
+  map.doubleClickZoom.disable();
+  map.dragging.disable();
+
+  // Track when user manually pans the map
+  map.on('dragstart', () => { STATE.userPanned = true; });
+
+  // Redraw zone AND marker position when map is panned/zoomed
+  map.on('move zoom zoomend moveend', () => {
+    if (STATE.arcData) drawZone();
+    if (STATE.gpsMarker && STATE.gpsPos) {
+      STATE.gpsMarker.setLatLng([STATE.gpsPos.lat, STATE.gpsPos.lng]);
+    }
+  });
+
+  STATE.mapReady = true;
+  setupDragListeners();
+  startGPS();
+}
+
+// ═══════════════════════════════════════════════════════════
+// GPS
+// ═══════════════════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    showToast('⚠️ GPS not available on this device', '#dc2626');
+    return;
+  }
+  showToast('📡 Getting your location...', '#1d4ed8');
+  // Try high accuracy first, fall back to any accuracy
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      showToast('📍 Location found!', '#16a34a');
+      updateGPS(pos.coords.latitude, pos.coords.longitude);
+      startWatch();
+    },
+    err => {
+      // Try again with lower accuracy
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          showToast('📍 Location found!', '#16a34a');
+          updateGPS(pos.coords.latitude, pos.coords.longitude);
+          startWatch();
+        },
+        () => {
+          showToast('⚠️ Could not get location. Allow GPS in Settings.', '#dc2626');
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      );
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+function startWatch() {
+  STATE.watchId = navigator.geolocation.watchPosition(
+    pos => updateGPS(pos.coords.latitude, pos.coords.longitude),
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+}
+function useDemoPos() {
+  showToast('⚠️ Using demo location', '#d97706');
+  updateGPS(40.9285, -74.3012);
+}
+function updateGPS(lat, lng) {
+  const firstFix = !STATE.gpsPos;
+  STATE.gpsPos = {lat, lng};
+  if (firstFix || !STATE.userPanned) {
+    map.setView([lat, lng], firstFix ? 18 : map.getZoom(), {animate: !firstFix});
+  }
+  drawGPSMarker();
+  checkBoundary();
+}
+
+function recenterMap(e) {
+  if (e) e.preventDefault();
+  STATE.userPanned = false;
+  if (STATE.gpsPos) {
+    map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], map.getZoom(), {animate:true});
+  }
+}
+
+// ─── GPS Marker icons (initialized in initMap) ────────────
+let GPS_ICON_NORMAL, GPS_ICON_DRAG, INCIDENT_ICON;
+
+function initIcons() {
+  GPS_ICON_NORMAL = L.divIcon({
+    className: '',
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:#1d4ed8;border:3px solid white;box-shadow:0 0 0 3px rgba(29,78,216,0.35);animation:gps-pulse-normal 1.6s infinite;"></div>`,
+    iconSize: [20,20], iconAnchor: [10,10]
+  });
+  GPS_ICON_DRAG = L.divIcon({
+    className: '',
+    html: `<div style="width:28px;height:28px;border-radius:50%;background:#1d4ed8;border:3px solid white;box-shadow:0 0 0 4px #dc2626, 0 0 0 7px rgba(220,38,38,0.3);animation:gps-pulse-drag 0.9s infinite;"></div>`,
+    iconSize: [28,28], iconAnchor: [14,14]
+  });
+
+  const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="52" viewBox="0 0 22 52"><ellipse cx="11" cy="51" rx="3" ry="1.2" fill="rgba(0,0,0,0.25)"/><defs><linearGradient id="needleGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#9ca3af"/><stop offset="40%" style="stop-color:#e5e7eb"/><stop offset="100%" style="stop-color:#6b7280"/></linearGradient></defs><polygon points="11,51 8.5,28 13.5,28" fill="url(#needleGrad)"/><circle cx="11" cy="13" r="12" fill="#dc2626" stroke="#b91c1c" stroke-width="0.5"/><circle cx="11" cy="13" r="9.2" fill="white"/><circle cx="11" cy="13" r="6.4" fill="#dc2626"/><circle cx="11" cy="13" r="3.8" fill="#1d4ed8"/><text x="11" y="16.5" text-anchor="middle" font-size="5.5" fill="white" font-family="Arial" font-weight="900">★</text><ellipse cx="8" cy="8" rx="3" ry="2" fill="rgba(255,255,255,0.4)" transform="rotate(-20,8,8)"/></svg>`;
+
+  INCIDENT_ICON = L.divIcon({
+    className: '',
+    html: PIN_SVG,
+    iconSize: [22, 52],
+    iconAnchor: [11, 51],
+    popupAnchor: [0, -52]
+  });
+
+  const s = document.createElement('style');
+  s.textContent = `
+    @keyframes gps-pulse-normal {
+      0%,100%{box-shadow:0 0 0 3px rgba(29,78,216,0.35);}
+      50%    {box-shadow:0 0 0 8px rgba(29,78,216,0.05);}
+    }
+    @keyframes gps-pulse-drag {
+      0%,100%{box-shadow:0 0 0 4px #dc2626, 0 0 0 7px rgba(220,38,38,0.35);}
+      50%    {box-shadow:0 0 0 4px #dc2626, 0 0 0 13px rgba(220,38,38,0.05);}
+    }`;
+  document.head.appendChild(s);
+}
+
+function drawGPSMarker(mode) {
+  if (!STATE.gpsPos) return;
+  // Only update stored mode if explicitly passed
+  if (mode !== undefined) STATE.markerMode = mode;
+  // Default to normal if never set
+  if (!STATE.markerMode) STATE.markerMode = 'normal';
+  const icon = STATE.markerMode === 'drag' ? GPS_ICON_DRAG : GPS_ICON_NORMAL;
+  if (STATE.gpsMarker) {
+    STATE.gpsMarker.setLatLng([STATE.gpsPos.lat, STATE.gpsPos.lng]);
+    STATE.gpsMarker.setIcon(icon);
+  } else {
+    STATE.gpsMarker = L.marker([STATE.gpsPos.lat, STATE.gpsPos.lng], {icon, interactive:false, zIndexOffset:1000})
+      .addTo(map);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ZONE DRAWING  (SVG overlay)
+// ═══════════════════════════════════════════════════════════
+function drawZone() {
+  const svg = document.getElementById('zone-svg');
+  svg.innerHTML = '';
+  if (!STATE.arcData || !STATE.gpsPos) return;
+
+  const {openingAngleDeg, radiusM} = STATE.arcData;
+
+  // Use lockedPos as zone center once locked, gpsPos only during drag creation
+  const zoneCenter = (STATE.arcLocked && STATE.lockedPos) ? STATE.lockedPos : STATE.gpsPos;
+
+  // Always recompute pixels from real-world meters at current zoom
+  const mpp = 156543.03392 * Math.cos(zoneCenter.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+  const radiusPx = radiusM / mpp;
+
+  const center = map.latLngToContainerPoint([zoneCenter.lat, zoneCenter.lng]);
+  const cx = center.x, cy = center.y;
+  const r = radiusPx;
+
+  // Use selected state angle (270 for NJ arc, 360 for full circle)
+  const arcAngle = (selectedState && selectedState.angle === 270) ? 270 : 360;
+
+  // For 360° just draw a full circle
+  if (arcAngle === 360) {
+    const fill = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    fill.setAttribute('cx', cx); fill.setAttribute('cy', cy); fill.setAttribute('r', r);
+    fill.setAttribute('fill', STATE.arcLocked ? 'rgba(220,38,38,0.3)' : 'rgba(220,38,38,0.2)');
+    svg.appendChild(fill);
+    const border = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    border.setAttribute('cx', cx); border.setAttribute('cy', cy); border.setAttribute('r', r);
+    border.setAttribute('fill','none');
+    border.setAttribute('stroke','#dc2626');
+    border.setAttribute('stroke-width', STATE.arcLocked ? '3' : '2');
+    if (!STATE.arcLocked) border.setAttribute('stroke-dasharray','6 3');
+    svg.appendChild(border);
+  } else {
+  const excludeCenter = (openingAngleDeg + 180) % 360;
+  const startDeg = (excludeCenter + 45) % 360;
+  const endDeg   = (excludeCenter - 45 + 360) % 360;
+  const startRad = startDeg * Math.PI / 180;
+  const endRad   = endDeg   * Math.PI / 180;
+
+  const sx = cx + r * Math.cos(startRad);
+  const sy = cy + r * Math.sin(startRad);
+  const ex = cx + r * Math.cos(endRad);
+  const ey = cy + r * Math.sin(endRad);
+
+  const fill = document.createElementNS('http://www.w3.org/2000/svg','path');
+  fill.setAttribute('d', `M${cx},${cy} L${sx},${sy} A${r},${r} 0 1 1 ${ex},${ey} Z`);
+  fill.setAttribute('fill', STATE.arcLocked ? 'rgba(220,38,38,0.3)' : 'rgba(220,38,38,0.2)');
+  svg.appendChild(fill);
+
+  const border = document.createElementNS('http://www.w3.org/2000/svg','path');
+  border.setAttribute('d', `M${sx},${sy} A${r},${r} 0 1 1 ${ex},${ey}`);
+  border.setAttribute('fill','none');
+  border.setAttribute('stroke', '#dc2626');
+  border.setAttribute('stroke-width', STATE.arcLocked ? '3' : '2');
+  if (!STATE.arcLocked) border.setAttribute('stroke-dasharray','6 3');
+  svg.appendChild(border);
+
+  if (!STATE.arcLocked && STATE.dragging) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    const ang = openingAngleDeg * Math.PI / 180;
+    line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+    line.setAttribute('x2', cx + r * Math.cos(ang));
+    line.setAttribute('y2', cy + r * Math.sin(ang));
+    line.setAttribute('stroke','rgba(220,38,38,0.6)');
+    line.setAttribute('stroke-width','2');
+    line.setAttribute('stroke-dasharray','4 3');
+    svg.appendChild(line);
+  }
+  } // end else 270°
+}
+
+// ─── 200ft in pixels at current zoom ──────────────────────
+function metersToPixels(meters) {
+  if (!STATE.gpsPos || !map) return 100;
+  const lat = STATE.gpsPos.lat;
+  const mpp = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+  return meters / mpp;
+}
+
+let boundaryAlertTime = 0;
+function checkBoundary() {
+  if (!STATE.arcLocked || !STATE.arcData || !STATE.gpsPos || !STATE.lockedPos) return;
+  const now = Date.now();
+  if (now - boundaryAlertTime < 3000) return;
+
+  // Distance from current position to zone CENTER (locked entrance)
+  const d = haversine(
+    STATE.gpsPos.lat, STATE.gpsPos.lng,
+    STATE.lockedPos.lat, STATE.lockedPos.lng
+  );
+  // How close are we to the zone edge (radiusM)?
+  const edgeDist = Math.abs(d - STATE.arcData.radiusM);
+  if (edgeDist < 3.05) { // within ~10 feet of boundary
+    boundaryAlertTime = now;
+    vibrate([150, 80, 150, 80, 150]);
+    playBoundaryWarning();
+  }
+}
+
+// ─── Haversine ─────────────────────────────────────────────
+function haversine(lat1,lon1,lat2,lon2) {
+  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ─── Vibrate ───────────────────────────────────────────────
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// ─── Tone (200ft reached) ──────────────────────────────────
+function playDing() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i*0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.4);
+      osc.start(ctx.currentTime + i*0.15);
+      osc.stop(ctx.currentTime + i*0.15 + 0.5);
+    });
+  } catch(e) {}
+}
+
+// ─── Tone (boundary warning - lower urgent beeps) ──────────
+function playBoundaryWarning() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [440, 340].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i*0.25);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.25 + 0.2);
+      osc.start(ctx.currentTime + i*0.25);
+      osc.stop(ctx.currentTime + i*0.25 + 0.25);
+    });
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAG TO CREATE ZONE
+// ═══════════════════════════════════════════════════════════
+let zoneDone = false;
+
+function setupDragListeners() {
+  const mapEl = document.getElementById('map');
+  mapEl.addEventListener('touchstart', onDragStart, {passive:false});
+  mapEl.addEventListener('touchmove',  onDragMove,  {passive:false});
+  mapEl.addEventListener('touchend',   onDragEnd,   {passive:false});
+  mapEl.addEventListener('mousedown',  onDragStart);
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup',   onDragEnd);
+}
+
+function getEventXY(e) {
+  const t = e.touches ? e.touches[0] : e;
+  const rect = document.getElementById('map').getBoundingClientRect();
+  return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+}
+
+function onDragStart(e) {
+  if (STATE.screen !== 's3' || zoneDone) return;
+  if (!STATE.gpsPos) return;
+
+  const {x,y} = getEventXY(e);
+  const center = map.latLngToContainerPoint([STATE.gpsPos.lat, STATE.gpsPos.lng]);
+  const dist = Math.hypot(x - center.x, y - center.y);
+  if (dist > 44) return; // must start on the dot
+
+  STATE.dragging = true;
+  STATE.dragStartPx = {x: center.x, y: center.y};
+  drawGPSMarker('drag');
+  e.preventDefault();
+}
+
+function onDragMove(e) {
+  if (!STATE.dragging || STATE.screen !== 's3') return;
+  e.preventDefault();
+
+  const {x,y} = getEventXY(e);
+  const cx = STATE.dragStartPx.x;
+  const cy = STATE.dragStartPx.y;
+  const dx = x - cx, dy = y - cy;
+  let radiusPx = Math.hypot(dx, dy);
+  const openingAngleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+
+  // max pixels = selected state's legal distance
+  const stateFeet = selectedState ? selectedState.feet : 200;
+  const stateMeters = stateFeet * 0.3048;
+  const maxPx = metersToPixels(stateMeters);
+  const capped = radiusPx >= maxPx;
+  if (capped) radiusPx = maxPx;
+
+  const mpp = 156543.03392 * Math.cos(STATE.gpsPos.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+  const radiusM = radiusPx * mpp;
+  const feet = Math.round(radiusM * 3.28084);
+
+  STATE.arcData = {radiusPx, openingAngleDeg, radiusM};
+  drawZone();
+
+  // Small red readout at midpoint of drag line
+  const dr = document.getElementById('dist-readout');
+  const ang = openingAngleDeg * Math.PI / 180;
+  const midX = cx + (radiusPx / 2) * Math.cos(ang);
+  const midY = cy + (radiusPx / 2) * Math.sin(ang);
+  dr.style.left = midX + 'px';
+  dr.style.top  = midY + 'px';
+  if (capped) {
+    dr.textContent = `✓ ${stateFeet} ft`;
+    dr.className = 'show done';
+  } else {
+    dr.textContent = feet + ' ft';
+    dr.className = 'show';
+  }
+
+  if (capped && !zoneDone) {
+    zoneDone = true;
+    vibrate([200,100,200,100,300]);
+    playDing();
+  }
+}
+
+function onDragEnd(e) {
+  if (!STATE.dragging) return;
+  STATE.dragging = false;
+  document.getElementById('dist-readout').className = '';
+  if (STATE.arcData && STATE.screen === 's3') {
+    STATE.arcLocked = true;
+    drawGPSMarker('normal');
+    setTimeout(() => goTo('s4'), 400);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// REAL SCREENSHOT CAPTURE
+// ═══════════════════════════════════════════════════════════
+function doScreenshot(nextScreen) {
+  vibrate([100]);
+  if (!window.html2canvas) {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => captureScreen(nextScreen);
+    s.onerror = () => { showToast('Use iPhone side+volume buttons to screenshot', '#d97706'); setTimeout(() => goTo(nextScreen), 2500); };
+    document.head.appendChild(s);
+  } else {
+    captureScreen(nextScreen);
+  }
+}
+
+function captureScreen(nextScreen) {
+  html2canvas(document.getElementById('map-wrapper'), {
+    useCORS: true, allowTaint: true, scale: 1, logging: false,
+  }).then(canvas => {
+    showScreenshotPreview(canvas.toDataURL('image/png'), nextScreen);
+  }).catch(() => {
+    showToast('Use iPhone side+volume buttons to screenshot', '#d97706');
+    setTimeout(() => goTo(nextScreen), 2500);
+  });
+}
+
+function stampImage(dataUrl, label, callback) {
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    // Small stamp bottom-right corner
+    const fontSize = Math.round(img.width * 0.038);
+    ctx.font = `700 ${fontSize}px Oswald, Arial, sans-serif`;
+    const padding = Math.round(fontSize * 0.5);
+    const textW = ctx.measureText(label).width;
+    const boxW = textW + padding * 2;
+    const boxH = fontSize + padding * 2;
+    const x = img.width - boxW - padding;
+    const y = img.height - boxH - padding;
+    // Dark background box
+    ctx.fillStyle = 'rgba(10,22,40,0.82)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, boxW, boxH, 6);
+    ctx.fill();
+    // Green text
+    ctx.fillStyle = '#4ade80';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + padding, y + boxH / 2);
+    callback(canvas.toDataURL('image/jpeg', 0.92));
+  };
+  img.src = dataUrl;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHARE / DOWNLOAD - Web Share API with fallback
+// ═══════════════════════════════════════════════════════════
+async function shareOrDownload(dataUrl, filename) {
+  try {
+    // Convert dataURL to blob
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], filename, {type: 'image/jpeg'});
+
+    if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+      // Native share sheet — single tap to Save to Photos
+      await navigator.share({
+        files: [file],
+        title: 'E-ZONE Photo',
+      });
+    } else {
+      // Fallback: anchor download
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      a.click();
+    }
+  } catch(err) {
+    // User cancelled share — that's fine, do nothing
+    if (err.name !== 'AbortError') console.log('Share error:', err);
+  }
+}
+
+function showScreenshotPreview(dataUrl, nextScreen) {
+  STATE.photoIndexInBatch++;
+  const batchStr = String(STATE.batchNumber).padStart(5,'0');
+  const label = `E-ZONE 360  Batch ${batchStr}  •  Photo ${STATE.photoIndexInBatch}  •  ${new Date().toLocaleString()}`;
+  const filename = `ezone-batch${batchStr}-photo${STATE.photoIndexInBatch}.jpg`;
+
+  stampImage(dataUrl, label, function(stampedUrl) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px;';
+
+    const tip = document.createElement('div');
+    tip.style.cssText = 'color:#4ade80;font-family:Nunito,sans-serif;font-size:15px;text-align:center;font-weight:700;';
+    tip.textContent = `Batch ${batchStr} · Photo ${STATE.photoIndexInBatch}`;
+
+    const img = document.createElement('img');
+    img.src = stampedUrl;
+    img.style.cssText = 'width:100%;max-height:58vh;border-radius:12px;border:3px solid white;object-fit:contain;';
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;';
+
+    const contBtn = document.createElement('button');
+    contBtn.textContent = 'Continue ✓';
+    contBtn.style.cssText = 'background:#16a34a;color:white;border:none;border-radius:14px;padding:16px;font-family:Nunito,sans-serif;font-size:18px;font-weight:900;cursor:pointer;';
+    contBtn.onclick = async () => {
+      await shareOrDownload(stampedUrl, filename);
+      document.body.removeChild(overlay);
+      goTo(nextScreen);
+    };
+
+    const retakeBtn = document.createElement('button');
+    retakeBtn.textContent = 'Retake';
+    retakeBtn.style.cssText = 'background:#d97706;color:white;border:none;border-radius:14px;padding:16px;font-family:Nunito,sans-serif;font-size:18px;font-weight:900;cursor:pointer;';
+    retakeBtn.onclick = () => { STATE.photoIndexInBatch--; document.body.removeChild(overlay); };
+
+    btnRow.appendChild(contBtn);
+    btnRow.appendChild(retakeBtn);
+    overlay.appendChild(tip);
+    overlay.appendChild(img);
+    overlay.appendChild(btnRow);
+    document.body.appendChild(overlay);
+    vibrate([100,50,100]);
+  });
+}
+// ═══════════════════════════════════════════════════════════
+// CAMERA / PHOTO
+// ═══════════════════════════════════════════════════════════
+document.getElementById('camera-input').addEventListener('change', function(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    STATE.currentPhoto = ev.target.result;
+    const batchStr = String(STATE.batchNumber).padStart(5,'0');
+    const nextIndex = STATE.photoIndexInBatch + 1;
+    const label = `E-ZONE  Batch ${batchStr}  •  Photo ${nextIndex}  •  ${new Date().toLocaleString()}`;
+    stampImage(ev.target.result, label, function(stampedUrl) {
+      STATE.currentPhoto = stampedUrl;
+      showCameraPreview(stampedUrl);
+    });
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+function triggerCamera() {
+  document.getElementById('camera-input').click();
+}
+
+function showCameraPreview(stampedUrl) {
+  const batchStr = String(STATE.batchNumber).padStart(5,'0');
+  const nextIndex = STATE.photoIndexInBatch + 1;
+  const filename = `ezone-batch${batchStr}-photo${nextIndex}.jpg`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cam-preview-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px;';
+
+  const tip = document.createElement('div');
+  tip.style.cssText = 'color:#4ade80;font-family:Nunito,sans-serif;font-size:15px;text-align:center;font-weight:700;';
+  tip.textContent = `Batch ${batchStr} · Photo ${nextIndex} — Tap SAVE to share`;
+
+  const img = document.createElement('img');
+  img.src = stampedUrl;
+  img.style.cssText = 'width:100%;max-height:55vh;border-radius:12px;border:3px solid white;object-fit:contain;';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;';
+
+  const contBtn = document.createElement('button');
+  contBtn.textContent = 'Continue ✓';
+  contBtn.style.cssText = 'background:#16a34a;color:white;border:none;border-radius:14px;padding:16px;font-family:Nunito,sans-serif;font-size:18px;font-weight:900;cursor:pointer;';
+  contBtn.onclick = async () => {
+    await shareOrDownload(stampedUrl, filename);
+    document.body.removeChild(overlay);
+    savePhoto();
+  };
+
+  const retakeBtn = document.createElement('button');
+  retakeBtn.textContent = 'Retake';
+  retakeBtn.style.cssText = 'background:#d97706;color:white;border:none;border-radius:14px;padding:16px;font-family:Nunito,sans-serif;font-size:18px;font-weight:900;cursor:pointer;';
+  retakeBtn.onclick = () => { document.body.removeChild(overlay); triggerCamera(); };
+
+  btnRow.appendChild(contBtn);
+  btnRow.appendChild(retakeBtn);
+  overlay.appendChild(tip);
+  overlay.appendChild(img);
+  overlay.appendChild(btnRow);
+  document.body.appendChild(overlay);
+  vibrate([100,50,100]);
+}
+
+function savePhoto() {
+  document.getElementById('photo-overlay').classList.remove('show');
+  STATE.photoIndexInBatch++;
+  const batchStr = String(STATE.batchNumber).padStart(5,'0');
+  if (STATE.currentPhoto && STATE.incidents.length > 0) {
+    STATE.incidents[STATE.incidents.length - 1].photo = STATE.currentPhoto;
+    STATE.incidents[STATE.incidents.length - 1].batch = batchStr;
+    STATE.incidents[STATE.incidents.length - 1].photoIndex = STATE.photoIndexInBatch;
+  }
+  STATE.currentPhoto = null;
+  goTo('s8');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, color='#16a34a') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREEN ROUTER
+// ═══════════════════════════════════════════════════════════
+const SCREENS = {
+  splash: {
+    tag: '',
+    bubble: '',
+    showHelp: false,
+    buttons: []
+  },
+  instructions: {
+    tag: 'POP_UP',
+  },
+  s1: {
+    tag: 'GOTO-Location_S1',
+    bubble: 'Go to your location entrance',
+    buttons: [
+      {label:'GO', cls:'btn-green', fn:'lockAndNext("s2")'},
+      {label:'Back', cls:'btn-blue', fn:'showSplash()'},
+      {label:'Reset', cls:'btn-reset btn-row center', fn:'doReset()'},
+    ]
+  },
+  s2: {
+    tag: 'LOCK_S2',
+    bubble: 'Are you at the location entrance? Tap LOCK',
+    buttons: [
+      {label:'LOCK', cls:'btn-green', fn:'lockPosition()'},
+      {label:'Back', cls:'btn-blue', fn:'goTo("s1")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s3: {
+    tag: 'CreateZone_S3',
+    bubble: 'Place your finger on the <span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 3px"><span style="width:20px;height:20px;border-radius:50%;background:#1d4ed8;border:3px solid white;box-shadow:0 0 0 3px #dc2626;display:inline-block"></span></span> Drag your finger directionally to mark your 200ft zone',
+    buttons: [
+      {label:'Back', cls:'btn-blue btn-row single', fn:'goTo("s2")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s4: {
+    tag: 'TAKE_Screenshot_S4',
+    bubble: 'Take a screenshot of the electioneering zone',
+    buttons: [
+      {label:'📷 Screenshot', cls:'btn-green', fn:'doScreenshot("s5")'},
+      {label:'Back', cls:'btn-blue', fn:'goTo("s3")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s5: {
+    tag: 'SAVE_Screenshot_S5',
+    bubble: 'Save screenshot to your photos?',
+    buttons: [
+      {label:'Save', cls:'btn-green', fn:'goTo("s6")'},
+      {label:'Retake', cls:'btn-amber', fn:'goTo("s4")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s6: {
+    tag: 'DROPpin_S6',
+    bubble: 'Report Electioneering incident? Walk to offense & DROP PIN or NO to continue',
+    buttons: [
+      {label:'DROP !', cls:'btn-green', fn:'dropPin()'},
+      {label:'No', cls:'btn-amber', fn:'goTo("s9")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s6a: {
+    tag: 'TAKE_PinScreenshot_S6a',
+    bubble: 'Take a screenshot of the DROPPED PIN',
+    buttons: [
+      {label:'📷 Screenshot', cls:'btn-green', fn:'doScreenshot("s6b")'},
+      {label:'Back', cls:'btn-blue', fn:'removeLastPin()'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s6b: {
+    tag: 'SAVE_Screenshot_S6b',
+    bubble: 'Save screenshot to your photos?',
+    buttons: [
+      {label:'Save', cls:'btn-green', fn:'goTo("s7")'},
+      {label:'Retake', cls:'btn-amber', fn:'goTo("s6a")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s7: {
+    tag: 'ElectInFrac_Screenshot_S7',
+    bubble: 'Take a picture of the Electioneering offense/sign',
+    buttons: [
+      {label:'📷 Take Pic', cls:'btn-green', fn:'triggerCamera()'},
+      {label:'Back', cls:'btn-blue', fn:'goTo("s6b")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s7a_preview: {
+    tag: 'SAVE_InfractionScreenshot_S7a',
+    bubble: 'Save screenshot to your photos?',
+    buttons: [
+      {label:'SAVE', cls:'btn-green', fn:'savePhoto()'},
+      {label:'Retake', cls:'btn-amber', fn:'triggerCamera()'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s8: {
+    tag: 'REPORT_ANOTHER_S8',
+    bubble: 'Report another Electioneering Incident?',
+    buttons: [
+      {label:'Yes', cls:'btn-green', fn:'goTo("s6")'},
+      {label:'No', cls:'btn-amber', fn:'goTo("s9")'},
+      {label:'Reset', cls:'btn-reset', fn:'doReset()'},
+    ]
+  },
+  s9: {
+    tag: 'UNDO-redzone_S9',
+    bubble: 'Undo the <span class="red">RED</span> Zone?',
+    buttons: [
+      {label:'Yes', cls:'btn-green', fn:'undoZone()'},
+      {label:'Back', cls:'btn-blue', fn:'goTo("s6")'},
+    ]
+  },
+};
+
+function goTo(screenId) {
+  STATE.screen = screenId;
+  renderScreen(screenId);
+}
+
+function renderScreen(id) {
+  const cfg = SCREENS[id];
+  if (!cfg) return;
+
+  // splash
+  document.getElementById('splash').classList.toggle('active', id === 'splash');
+
+  // instructions
+  document.getElementById('instructions').classList.toggle('active', id === 'instructions');
+
+  // map wrapper
+  const isMapScreen = !['splash','instructions'].includes(id);
+  const mapWrapper = document.getElementById('map-wrapper');
+  const mapUI = document.getElementById('map-ui');
+  mapWrapper.style.display = isMapScreen ? 'flex' : 'none';
+  mapUI.style.display = isMapScreen ? 'block' : 'none';
+
+  if (!isMapScreen) return;
+
+  // init map once
+  if (!STATE.mapReady) initMap();
+
+  // bubble
+  document.getElementById('bubble').innerHTML = cfg.bubble || '';
+
+  // tag
+  document.getElementById('screen-tag').textContent = cfg.tag || '';
+
+  // enable map pan on patrol screens, disable on setup screens
+  const patrolScreens = ['s6','s6a','s6b','s7','s7a_preview','s8','s9'];
+  if (patrolScreens.includes(id)) {
+    map.dragging.enable();
+  } else {
+    map.dragging.disable();
+    // Always recenter on non-patrol screens
+    if (STATE.gpsPos) {
+      STATE.userPanned = false;
+      setTimeout(() => {
+        if (STATE.gpsPos && map) {
+          map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], map.getZoom(), {animate: false});
+        }
+      }, 100);
+    }
+  }
+
+  // redraw zone
+  if (STATE.arcData) drawZone();
+
+  // bottom bar
+  const bar = document.getElementById('bottom-bar');
+  bar.innerHTML = '';
+  const btns = cfg.buttons || [];
+
+  // Group: first two as row, reset separate
+  let mainBtns = btns.filter(b => !b.cls.includes('btn-reset'));
+  let resetBtns = btns.filter(b => b.cls.includes('btn-reset'));
+
+  if (mainBtns.length >= 2) {
+    const row = document.createElement('div');
+    row.className = 'btn-row';
+    mainBtns.forEach(b => row.appendChild(makeBtn(b)));
+    bar.appendChild(row);
+  } else if (mainBtns.length === 1) {
+    const row = document.createElement('div');
+    row.className = 'btn-row single';
+    row.appendChild(makeBtn(mainBtns[0]));
+    bar.appendChild(row);
+  }
+
+  if (resetBtns.length) {
+    const center = document.createElement('div');
+    center.className = 'btn-row center';
+    resetBtns.forEach(b => {
+      const btn = makeBtn(b);
+      btn.style.padding = '12px 32px';
+      btn.style.fontSize = '15px';
+      center.appendChild(btn);
+    });
+    bar.appendChild(center);
+  }
+
+  // drag zone: s3 only
+  if (id === 's3') {
+    zoneDone = false;
+    STATE.arcData = null;
+    STATE.arcLocked = false;
+    document.getElementById('zone-svg').innerHTML = '';
+    drawGPSMarker('drag');
+  } else if (id === 's4') {
+    // Zone just created - switch back to normal
+    drawGPSMarker('normal');
+  } else {
+    // All other screens - normal marker
+    drawGPSMarker('normal');
+  }
+}
+
+function makeBtn(cfg) {
+  const btn = document.createElement('button');
+  btn.className = 'app-btn ' + cfg.cls.replace('btn-reset','btn-red');
+  btn.innerHTML = cfg.label;
+  btn.setAttribute('onclick', cfg.fn);
+  return btn;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════
+function lockAndNext(next) {
+  if (!STATE.mapReady) initMap();
+  goTo(next);
+}
+
+function lockPosition() {
+  STATE.lockedPos = STATE.gpsPos ? {...STATE.gpsPos} : {lat:40.9285,lng:-74.3012};
+  STATE.batchNumber++;
+  STATE.photoIndexInBatch = 0;
+  vibrate([200]);
+  goTo('s3');
+}
+
+function dropPin() {
+  if (STATE.gpsPos) {
+    const marker = L.marker([STATE.gpsPos.lat, STATE.gpsPos.lng], {
+      icon: INCIDENT_ICON, interactive: false, zIndexOffset: 900
+    }).addTo(map);
+    STATE.incidentMarkers.push(marker);
+    STATE.incidents.push({lat: STATE.gpsPos.lat, lng: STATE.gpsPos.lng, photo: null});
+  }
+  goTo('s6a');
+}
+
+function removeLastPin() {
+  // Remove the most recently dropped pin when Back is pressed from s6a
+  if (STATE.incidentMarkers.length > 0) {
+    const last = STATE.incidentMarkers.pop();
+    map.removeLayer(last);
+  }
+  if (STATE.incidents.length > 0) {
+    STATE.incidents.pop();
+  }
+  goTo('s6');
+}
+
+function undoZone() {
+  STATE.arcData = null;
+  STATE.arcLocked = false;
+  STATE.markerMode = 'normal';
+  STATE.userPanned = false;
+  STATE.incidents = [];
+  STATE.incidentMarkers.forEach(m => map.removeLayer(m));
+  STATE.incidentMarkers = [];
+  document.getElementById('zone-svg').innerHTML = '';
+  zoneDone = false;
+  drawGPSMarker('normal');
+  goTo('s1');
+
+  setTimeout(() => {
+    if (STATE.gpsPos && map) {
+      STATE.userPanned = false;
+      map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], 18, {animate: false});
+    }
+  }, 150);
+}
+
+function showSplash() {
+  document.getElementById('map-ui').style.display = 'none';
+  document.getElementById('map-wrapper').style.display = 'none';
+  document.getElementById('splash').style.display = 'flex';
+  document.getElementById('splash').classList.add('active');
+}
+
+function recenterMap() {
+  if (STATE.gpsPos && map) {
+    STATE.userPanned = false;
+    map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], map.getZoom(), {animate: true});
+  }
+}
+
+function doReset() {
+  STATE.arcData = null;
+  STATE.arcLocked = false;
+  STATE.lockedPos = null;
+  STATE.incidents = [];
+  STATE.markerMode = 'normal';
+  STATE.userPanned = false;
+  STATE.incidentMarkers.forEach(m => map.removeLayer(m));
+  STATE.incidentMarkers = [];
+  document.getElementById('zone-svg').innerHTML = '';
+  document.getElementById('photo-overlay').classList.remove('show');
+  zoneDone = false;
+  drawGPSMarker('normal');
+  goTo('s1');
+
+  // Force recenter — delayed to ensure map is visible first
+  setTimeout(() => {
+    if (STATE.gpsPos && map) {
+      STATE.userPanned = false;
+      map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], 18, {animate: false});
+    }
+  }, 150);
+}
+
+function showHelp() {
+  STATE.prevMapScreen = STATE.screen;
+  const instr = document.getElementById('instructions');
+  instr.classList.add('active');
+  instr.style.zIndex = '9000';
+  document.getElementById('map-ui').style.display = 'none';
+}
+
+function closeInstructions() {
+  const instr = document.getElementById('instructions');
+  instr.classList.remove('active');
+  instr.style.zIndex = '';
+  if (STATE.prevMapScreen && STATE.prevMapScreen !== 'splash') {
+    document.getElementById('map-ui').style.display = 'block';
+    renderScreen(STATE.prevMapScreen);
+  } else {
+    // Go to state selector first
+    showStateSelector();
+  }
+}
+
+function showStateSelector() {
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('instructions').classList.remove('active');
+  const sel = document.getElementById('state-selector');
+  sel.classList.add('active');
+
+  // Populate list if empty
+  const list = document.getElementById('state-list');
+  if (list.children.length === 0) {
+    STATES.forEach(s => {
+      const row = document.createElement('div');
+      row.onclick = () => selectState(s);
+      row.style.cssText = `
+        display:flex;justify-content:space-between;align-items:center;
+        background:rgba(255,255,255,0.06);border-radius:12px;
+        padding:14px 16px;margin-bottom:8px;cursor:pointer;
+        border:1px solid rgba(255,255,255,0.08);
+      `;
+      const left = document.createElement('div');
+      left.innerHTML = `<div style="font-family:'Nunito',sans-serif;font-size:17px;font-weight:800;color:white;">${s.name}</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;color:rgba(255,255,255,0.5);margin-top:2px;">${s.feet ? s.feet + ' ft' : 'Property path'} · ${s.angle === 270 ? '270° arc' : '360° circle'}</div>`;
+      const flag = document.createElement('div');
+      flag.style.cssText = 'font-family:Nunito,sans-serif;font-size:22px;font-weight:900;color:#dc2626;';
+      flag.textContent = s.abbr;
+      row.appendChild(left);
+      row.appendChild(flag);
+      list.appendChild(row);
+    });
+  }
+}
+
+function selectState(s) {
+  selectedState = s;
+  // Update zone parameters
+  STATE.FEET_200 = s.feet ? s.feet * 0.3048 : 60.96;
+  // Update S1 bubble text to match state anchor
+  const screens = SCREENS;
+  if (screens.s1) screens.s1.bubble = `Go to the ${s.anchor}`;
+  if (screens.s2) screens.s2.bubble = `Are you at the ${s.anchor}? Tap LOCK`;
+  if (screens.s3) screens.s3.bubble = `Place your finger on the <span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 3px"><span style="width:20px;height:20px;border-radius:50%;background:#1d4ed8;border:3px solid white;box-shadow:0 0 0 3px #dc2626;display:inline-block"></span></span> Drag to mark your ${s.feet || 'zone'} ft ${s.angle === 270 ? '270° zone' : 'circle'}`;
+
+  // Hide state selector, init map, go to S1
+  document.getElementById('state-selector').classList.remove('active');
+  if (!STATE.mapReady) initMap();
+  goTo('s1');
+}
+
+function openInstructions(from) {
+  STATE.prevMapScreen = from;
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById('splash').style.display = 'none';
+  const instr = document.getElementById('instructions');
+  instr.style.zIndex = '9000';
+  instr.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    openInstructions('splash');
+  }, 5000);
+});
+
+window.addEventListener('resize', () => {
+  if (STATE.arcData) drawZone();
+  // After rotation, force map to invalidate size then recenter
+  if (map) {
+    setTimeout(() => {
+      map.invalidateSize();
+      if (STATE.gpsPos && !STATE.userPanned) {
+        map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], map.getZoom(), {animate: false});
+      }
+      if (STATE.arcData) drawZone();
+    }, 200);
+  }
+});
+
+window.addEventListener('orientationchange', () => {
+  if (map) {
+    setTimeout(() => {
+      map.invalidateSize();
+      STATE.userPanned = false;
+      if (STATE.gpsPos) {
+        map.setView([STATE.gpsPos.lat, STATE.gpsPos.lng], map.getZoom(), {animate: false});
+      }
+      if (STATE.arcData) drawZone();
+    }, 400);
+  }
+});
+</script>
+</body>
+</html>
