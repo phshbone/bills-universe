@@ -93,5 +93,6 @@ $('cardsBtn').onclick=()=>{view='cards';localStorage.setItem('billodexView',view
 if(window.visualViewport){visualViewport.addEventListener('resize',setKeyboardOffset);visualViewport.addEventListener('scroll',setKeyboardOffset)}window.addEventListener('resize',setKeyboardOffset);document.addEventListener('selectionchange',()=>{if($('editor').classList.contains('show'))rememberRange()});render();
 })();
 </script>
+<script src="checklist-fix.js?v=1"></script>
 </body>
 </html>
