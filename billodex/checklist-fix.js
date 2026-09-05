@@ -2,6 +2,8 @@
   const content = document.getElementById('content');
   if (!content) return;
 
+  let lastHandledAt = 0;
+
   function textOf(el) {
     return (el?.textContent || '').replace(/\s+/g, ' ').trim();
   }
@@ -16,8 +18,17 @@
     el.focus();
   }
 
-  function saveSoon() {
-    content.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertParagraph' }));
+  function saveSoon(inputType = 'insertParagraph') {
+    content.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
+  }
+
+  function currentChecklistItem() {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return null;
+    const anchor = sel.anchorNode;
+    const el = anchor?.nodeType === 1 ? anchor : anchor?.parentElement;
+    const item = el?.closest?.('.checkitem');
+    return item && content.contains(item) ? item : null;
   }
 
   function newChecklistItem(afterItem) {
@@ -25,8 +36,7 @@
     item.className = 'checkitem';
     item.innerHTML = '<input type="checkbox"><span class="checktext" contenteditable="true"><br></span>';
     afterItem.after(item);
-    const text = item.querySelector('.checktext');
-    placeCaret(text);
+    placeCaret(item.querySelector('.checktext'));
     saveSoon();
   }
 
@@ -39,15 +49,17 @@
     saveSoon();
   }
 
-  content.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' || e.shiftKey) return;
+  function handleChecklistReturn(e) {
+    const item = currentChecklistItem();
+    if (!item) return false;
 
-    const sel = window.getSelection();
-    if (!sel?.rangeCount) return;
-    const anchor = sel.anchorNode;
-    const el = anchor?.nodeType === 1 ? anchor : anchor?.parentElement;
-    const item = el?.closest?.('.checkitem');
-    if (!item || !content.contains(item)) return;
+    const now = performance.now();
+    if (now - lastHandledAt < 40) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return true;
+    }
+    lastHandledAt = now;
 
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -55,5 +67,16 @@
     const text = item.querySelector('.checktext');
     if (!textOf(text)) exitChecklist(item);
     else newChecklistItem(item);
+    return true;
+  }
+
+  content.addEventListener('beforeinput', (e) => {
+    if (e.inputType !== 'insertParagraph' && e.inputType !== 'insertLineBreak') return;
+    handleChecklistReturn(e);
+  }, true);
+
+  content.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    handleChecklistReturn(e);
   }, true);
 })();
